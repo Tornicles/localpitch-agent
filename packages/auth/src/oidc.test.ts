@@ -1,3 +1,4 @@
+// Modified by LocalPitch, 2026
 import { createHash, createHmac, generateKeyPairSync, sign } from "node:crypto";
 import type * as Db from "@rakazo/db";
 import { memoryAdapter } from "better-auth/adapters/memory";
@@ -564,6 +565,44 @@ describe("OIDC callbacks", () => {
     });
     expect((await signIn()).headers.get("location")).toBe(`${origin}/app`);
   });
+  it("admits any LocalPitch identity through OIDC and refuses a direct sign-up", async () => {
+    setup({
+      passwordAuth: false,
+      signupsEnabled: "true",
+      signupAllowlist: "",
+      email: {
+        describe: () => ({
+          id: "offline-email",
+          contractVersion: "1",
+          adapterVersion: "1",
+          capabilities: { transactional: true },
+        }),
+        send: vi.fn(async () => undefined),
+      },
+      oidc: {
+        issuer,
+        clientId: "test-client",
+        clientSecret: "fake-secret",
+        name: "LocalPitch",
+        scopes: ["openid", "email", "profile"],
+        allowSignupBypass: true,
+      },
+    });
+    expect((await signIn()).headers.get("location")).toBe(`${origin}/app`);
+    expect(rows("user")).toHaveLength(1);
+    expect(await (await request("/account-security")).json()).toMatchObject({
+      sso: { name: "LocalPitch" },
+    });
+    const signup = await request("/sign-up/email", {
+      email: "local@example.test",
+      password: "test-password-123",
+      name: "Local",
+    });
+    expect(signup.status).toBe(403);
+    expect(await signup.json()).toMatchObject({ code: "PASSWORD_AUTH_DISABLED" });
+    expect(rows("user")).toHaveLength(1);
+  });
+
   it.each([false, true])("closed registration stays closed with bypass=%s", async (bypass) => {
     setup({
       signupsEnabled: "false",

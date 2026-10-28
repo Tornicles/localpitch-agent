@@ -1,4 +1,6 @@
+// Modified by LocalPitch, 2026
 import { validateToolArguments } from "@earendil-works/pi-ai/utils/validation";
+import { connectorToolRequiresApproval } from "@rakazo/core";
 import { approvalEffectKey } from "@rakazo/core/node/approval-effect-key";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -1677,4 +1679,113 @@ describe("declared JSON request bodies", () => {
       if (declared === "header") expect(new Headers(init.headers).get("body")).toBe("legacy");
     },
   );
+});
+
+describe("LocalPitch OpenAPI tool source", () => {
+  const spec = {
+    openapi: "3.1.0",
+    servers: [{ url: "https://app.example.test/api/agent/v1" }],
+    paths: {
+      "/me": {
+        get: { operationId: "whoami", summary: "Who the token belongs to" },
+      },
+      "/approvals": {
+        post: {
+          operationId: "propose_action",
+          summary: "Propose an outgoing action",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: { kind: { type: "string" }, title: { type: "string" } },
+                  required: ["kind", "title"],
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+
+  it("imports whoami and calls it with the bearer token", async () => {
+    const token = "lp_at_fake_token";
+    const fetch = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
+      const href = String(url);
+      if (href.endsWith("/openapi.json")) return Response.json(spec);
+      expect(href).toBe("https://app.example.test/api/agent/v1/me");
+      expect(new Headers(init?.headers).get("authorization")).toBe(`Bearer ${token}`);
+      return Response.json({
+        user: { id: "user-1", name: "Ada", email: "ada@example.test", timezone: "UTC" },
+        workspace: { id: "ws-1", name: "Ada", plan: "free" },
+        agent: { id: null, label: "Grana", areas: ["assistant"] },
+      });
+    });
+    const remote = {
+      fetch: fetch as unknown as typeof globalThis.fetch,
+      resolveHostname: async () => [{ address: "203.0.113.10", family: 4 as const }],
+    };
+    const prepared = await prepareApiInstall({
+      source: "https://app.example.test/api/agent/openapi.json",
+      config: { openapi: true, auth: { type: "bearer" } },
+      credential: token,
+      remote,
+    });
+    const whoami = (prepared.config.operations as Array<{ id: string; readOnly: boolean }>).find(
+      (operation) => operation.id === "whoami",
+    );
+    const propose = (prepared.config.operations as Array<{ id: string; readOnly: boolean }>).find(
+      (operation) => operation.id === "propose_action",
+    );
+    expect(whoami?.readOnly).toBe(true);
+    expect(propose?.readOnly).toBe(false);
+    // A declared write always asks. A GET whose name is not get/list/search/find/read still asks.
+    expect(connectorToolRequiresApproval("propose_action", false)).toBe(true);
+    expect(connectorToolRequiresApproval("whoami", true)).toBe(true);
+    expect(connectorToolRequiresApproval("get_credit_balance", true)).toBe(false);
+
+    const provider = new InstalledConnectorProvider(
+      {
+        capabilityInstall: {
+          findFirst: vi.fn(async () => ({
+            id: "install-1",
+            kind: "api",
+            name: "LocalPitch",
+            source: prepared.source,
+            secretId: "secret-1",
+            config: prepared.config,
+          })),
+        },
+        secret: { findFirst: vi.fn(async () => ({ id: "secret-1", ciphertext: "sealed" })) },
+      } as never,
+      { load: vi.fn(async () => token) } as never,
+      remote,
+    );
+    const events = [];
+    for await (const event of provider.execute(
+      {
+        tool: "whoami",
+        args: {},
+        executionId: "call-1",
+        route: { connectorId: "installed", resourceId: "install-1", toolName: "whoami" },
+      },
+      { spaceId: "space-1", userId: "user-1", signal: AbortSignal.timeout(5_000) } as never,
+    )) {
+      events.push(event);
+    }
+    expect(events).toEqual([
+      {
+        type: "result",
+        data: {
+          status: 200,
+          data: expect.objectContaining({
+            user: expect.objectContaining({ email: "ada@example.test" }),
+          }),
+        },
+      },
+    ]);
+    expect(JSON.stringify(events)).not.toContain(token);
+  });
 });

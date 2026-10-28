@@ -1,3 +1,4 @@
+// Modified by LocalPitch, 2026
 import { MenuView } from "@expo/ui/community/menu";
 import type { AccountSecurity, UsageSummary } from "@rakazo/contracts";
 import { accountDisplay, displayName } from "@rakazo/core";
@@ -26,6 +27,7 @@ import { NameDialog } from "../../components/name-dialog";
 import { NativeActionButton } from "../../components/native-action-button";
 import { NativeSegmentedControl } from "../../components/native-segmented-control";
 import {
+  SettingsFooter,
   SettingsGroup,
   SettingsLabel,
   SettingsRow,
@@ -809,6 +811,11 @@ export default function Account() {
             </View>
           ) : null}
         </View>
+
+        <SettingsLabel>{t("About")}</SettingsLabel>
+        <SettingsFooter>
+          {t("This server runs Rakazo (Apache-2.0). LocalPitch's assistant is Grana.")}
+        </SettingsFooter>
 
         <SettingsGroup>
           <SettingsRow

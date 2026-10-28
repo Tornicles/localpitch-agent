@@ -1,3 +1,4 @@
+// Modified by LocalPitch, 2026
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { AccountSecurity, UsageSummary } from "@rakazo/contracts";
 import {
@@ -472,6 +473,12 @@ export function GeneralSettingsPanels({
       <AccountDataSettings onImported={onAccountImported} />
 
       <AccountAccess onSecurity={setAccountSecurity} />
+
+      <SettingsGroup title={<Trans>About</Trans>}>
+        <p className="px-4 py-3 text-[14px] text-foreground">
+          <Trans>This server runs Rakazo (Apache-2.0). LocalPitch's assistant is Grana.</Trans>
+        </p>
+      </SettingsGroup>
     </div>
   );
 }

@@ -1,4 +1,8 @@
+// Modified by LocalPitch, 2026
 export const ZH_MESSAGES: Record<string, string> = {
+  About: "关于",
+  "This server runs Rakazo (Apache-2.0). LocalPitch's assistant is Grana.":
+    "此服务器运行 Rakazo（Apache-2.0）。LocalPitch 的助手是 Grana。",
   "How other bots see it": "其他机器人如何了解它",
   "Share to": "分享到",
   "{count} files": "{count} 个文件",

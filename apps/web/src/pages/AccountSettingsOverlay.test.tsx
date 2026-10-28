@@ -122,12 +122,32 @@ import {
   getComposerEnterToSend,
   setComposerEnterToSend,
 } from "../lib/composer-enter-to-send-pref";
+// Modified by LocalPitch, 2026
 import { getRemoteImagesEnabled } from "../lib/remote-images-preference";
 import { TOOL_ACTIVITY_STORAGE_KEY } from "../lib/tool-activity-preference";
 import { GeneralSettingsPanels, UsageSettingsPanel } from "./AccountSettingsOverlay";
 
 afterEach(() => {
   localStorage.clear();
+});
+
+it("credits Rakazo on the About note without using that name as the product", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  try {
+    await act(async () => {
+      root.render(<GeneralSettingsPanels name="Jamie" />);
+    });
+    expect(container.textContent).toContain("About");
+    expect(container.textContent).toContain(
+      "This server runs Rakazo (Apache-2.0). LocalPitch's assistant is Grana.",
+    );
+  } finally {
+    await act(async () => root.unmount());
+    container.remove();
+  }
 });
 
 it("flips the stored tool activity preference from the settings toggle", async () => {
