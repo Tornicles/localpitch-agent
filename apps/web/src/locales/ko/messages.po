@@ -432,6 +432,10 @@ msgstr ""
 msgid "A subscription credential is stored securely."
 msgstr "구독 인증 정보가 안전하게 저장되어 있습니다."
 
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "About"
+msgstr ""
+
 #: src/components/InfoTooltip.tsx
 msgid "About {label}"
 msgstr "{label} 정보"
@@ -5893,6 +5897,10 @@ msgstr "이 서버는 브라우저 인증을 요청하지 않았습니다."
 #: src/pages/McpServersOverlay.tsx
 msgid "This server is already connected. Disconnect it first to authorize again."
 msgstr "이 서버는 이미 연결되어 있습니다. 다시 인증하려면 먼저 연결을 해제하세요."
+
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "This server runs Rakazo (Apache-2.0). LocalPitch's assistant is Grana."
+msgstr ""
 
 #: src/pages/model-settings/connection-controls.tsx
 msgid "This subscription sign-in is not available in Rakazo yet. Use a deployment credential or choose another provider."

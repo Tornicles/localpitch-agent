@@ -432,6 +432,10 @@ msgstr ""
 msgid "A subscription credential is stored securely."
 msgstr "Un identifiant d'abonnement est stocké de façon sécurisée."
 
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "About"
+msgstr ""
+
 #: src/components/InfoTooltip.tsx
 msgid "About {label}"
 msgstr "À propos de {label}"
@@ -5893,6 +5897,10 @@ msgstr "Ce serveur n'a pas demandé l'autorisation du navigateur."
 #: src/pages/McpServersOverlay.tsx
 msgid "This server is already connected. Disconnect it first to authorize again."
 msgstr "Ce serveur est déjà connecté. Déconnectez-le d'abord pour l'autoriser à nouveau."
+
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "This server runs Rakazo (Apache-2.0). LocalPitch's assistant is Grana."
+msgstr ""
 
 #: src/pages/model-settings/connection-controls.tsx
 msgid "This subscription sign-in is not available in Rakazo yet. Use a deployment credential or choose another provider."

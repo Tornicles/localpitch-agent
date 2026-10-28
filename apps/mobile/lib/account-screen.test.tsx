@@ -1,3 +1,4 @@
+// Modified by LocalPitch, 2026
 // @vitest-environment jsdom
 
 import type { AccountSecurity } from "@rakazo/contracts";
@@ -134,6 +135,7 @@ vi.mock("../components/native-segmented-control", () => ({
 vi.mock("../components/settings-group", () => ({
   SettingsGroup: element("div"),
   SettingsLabel: element("span"),
+  SettingsFooter: element("span"),
   SettingsRow: ({
     title,
     value,
@@ -292,6 +294,9 @@ it("offers no avatar style choice in account settings", async () => {
 
   expect(container.querySelector('[aria-label="Appearance"]')).not.toBeNull();
   expect(container.textContent).toContain("Language");
+  expect(container.textContent).toContain(
+    "This server runs Rakazo (Apache-2.0). LocalPitch's assistant is Grana.",
+  );
   expect(container.querySelector('[aria-label="Avatar style"]')).toBeNull();
   expect(container.textContent).not.toContain("Avatars");
   expect(container.textContent).not.toContain("Robot");

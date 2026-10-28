@@ -1,5 +1,7 @@
+// Modified by LocalPitch, 2026
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resolveDeploymentModel } from "./deployment-model.js";
+import { resolveRunModel } from "./run-model.js";
 
 // Host credentials come from the process, so blank the ones a developer machine or CI
 // host may carry; each case states its own.
@@ -98,5 +100,85 @@ describe("resolveDeploymentModel", () => {
         PI_DEFAULT_CREDENTIALS: "host",
       }).configured,
     ).toBe(false);
+  });
+
+  it("uses GEMINI_API_KEY for every bot when the deployment provider is google", () => {
+    const env = {
+      OPENROUTER_API_KEY: "or-key",
+      ANTHROPIC_API_KEY: "sk-ant-key",
+      GEMINI_API_KEY: "fake-gemini-key",
+      PI_DEFAULT_PROVIDER: "google",
+    };
+    expect(resolveDeploymentModel(env)).toEqual({
+      provider: "google",
+      model: "gemini-3.8-flash",
+      key: "fake-gemini-key",
+      configured: true,
+      hostCredentials: false,
+    });
+    expect(resolveDeploymentModel({ ...env, PI_DEFAULT_MODEL: "gemini-3.8-flash" }).model).toBe(
+      "gemini-3.8-flash",
+    );
+    // Another vendor's key never fills in for Google.
+    expect(
+      resolveDeploymentModel({
+        OPENROUTER_API_KEY: "or-key",
+        ANTHROPIC_API_KEY: "sk-ant-key",
+        PI_DEFAULT_PROVIDER: "google",
+      }),
+    ).toEqual({
+      provider: "google",
+      model: "gemini-3.8-flash",
+      key: undefined,
+      configured: false,
+      hostCredentials: false,
+    });
+    // OpenRouter and Anthropic keep their own keys when Google is also set.
+    expect(
+      resolveDeploymentModel({
+        ...env,
+        PI_DEFAULT_PROVIDER: "openrouter",
+      }),
+    ).toMatchObject({ provider: "openrouter", key: "or-key", model: "openai/gpt-6-luna" });
+    expect(
+      resolveDeploymentModel({
+        ...env,
+        PI_DEFAULT_PROVIDER: "anthropic",
+      }),
+    ).toMatchObject({ provider: "anthropic", key: "sk-ant-key", model: "claude-sonnet-5" });
+  });
+});
+
+describe("deployment Gemini key on a run with no user connection", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("resolves google/gemini-3.8-flash from GEMINI_API_KEY without a per-user key", async () => {
+    vi.stubEnv("PI_DEFAULT_PROVIDER", "google");
+    vi.stubEnv("PI_DEFAULT_MODEL", "gemini-3.8-flash");
+    vi.stubEnv("GEMINI_API_KEY", "fake-gemini-key");
+    vi.stubEnv("OPENROUTER_API_KEY", "fake-openrouter-key");
+    const prisma = {
+      spaceSettingOverride: { findMany: async () => [], findUnique: async () => null },
+      userModelRoleChoice: { findMany: async () => [] },
+      spaceModelRoleChoice: { findMany: async () => [] },
+      deploymentSettings: { findUnique: async () => null },
+    };
+    const model = await resolveRunModel(
+      {
+        prisma,
+        billingEnabled: false,
+        deploymentModelConfigured: true,
+        deploymentModelKey: "fake-gemini-key",
+        secretStore: { load: async () => "", put: async () => ({ id: "", ciphertext: "" }) },
+      } as never,
+      { userId: "user-1", spaceId: "space-1" },
+    );
+    expect(model).toMatchObject({
+      provider: "google",
+      id: "gemini-3.8-flash",
+      apiKey: "fake-gemini-key",
+    });
   });
 });

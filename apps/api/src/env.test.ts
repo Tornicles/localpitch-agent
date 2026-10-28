@@ -1,3 +1,4 @@
+// Modified by LocalPitch, 2026
 import { describe, expect, it } from "vitest";
 import { loadEnv } from "./env.js";
 
@@ -350,6 +351,47 @@ describe("OIDC environment", () => {
       );
     },
   );
+  it("loads the LocalPitch assistant env: Gemini, no sandbox, OIDC-only sign-in", () => {
+    const env = loadEnv({
+      ...base,
+      NODE_ENV: "production",
+      BETTER_AUTH_SECRET: "production-auth-secret-at-least-32-characters",
+      ENCRYPTION_KEY: "production-encryption-key-at-least-32-characters",
+      SCREEN_PROXY_SECRET: "production-screen-proxy-secret-32-chars",
+      SANDBOX_PROVIDER: "none",
+      CONTENT_ENCRYPTION: "on",
+      GEMINI_API_KEY: "fake-gemini-key",
+      OPENROUTER_API_KEY: "fake-openrouter-key",
+      PI_DEFAULT_PROVIDER: "google",
+      PI_DEFAULT_MODEL: "gemini-3.8-flash",
+      AUTH_PASSWORD_ENABLED: "false",
+      SIGNUPS_ENABLED: "true",
+      SIGNUP_ALLOWLIST: "",
+      OIDC_ALLOW_SIGNUP_BYPASS: "true",
+      OIDC_ISSUER: "https://app.example.test",
+      OIDC_CLIENT_ID: "fake-client",
+      OIDC_CLIENT_SECRET: "fake-secret",
+      OIDC_NAME: "LocalPitch",
+      MAX_UPLOAD_SIZE_MB: "10",
+      MAX_TOOL_CALLS_PER_TURN: "25",
+    });
+    expect(env.sandboxProvider).toBe("none");
+    expect(env.passwordAuth).toBe(false);
+    expect(env.contentEncryption).toBe(true);
+    expect(env.signupsEnabled).toBe("true");
+    expect(env.signupAllowlist).toBe("");
+    expect(env.oidc).toMatchObject({
+      name: "LocalPitch",
+      allowSignupBypass: true,
+      issuer: "https://app.example.test",
+    });
+    expect(env.deploymentModelConfigured).toBe(true);
+    expect(env.deploymentModelKey).toBe("fake-gemini-key");
+    expect(env.defaultProvider).toBe("google");
+    expect(env.defaultModel).toBe("gemini-3.8-flash");
+    expect(env.maxUploadSizeBytes).toBe(10 * 1024 * 1024);
+  });
+
   it("guards password-only lockout without contacting discovery", () => {
     expect(() => loadEnv({ ...base, AUTH_PASSWORD_ENABLED: "false" })).toThrow(/requires OIDC/);
     expect(loadEnv({ ...base, ...oidc, AUTH_PASSWORD_ENABLED: "false" }).passwordAuth).toBe(false);

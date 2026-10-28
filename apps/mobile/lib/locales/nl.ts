@@ -1,4 +1,8 @@
+// Modified by LocalPitch, 2026
 export const NL_MESSAGES: Record<string, string> = {
+  About: "Over",
+  "This server runs Rakazo (Apache-2.0). LocalPitch's assistant is Grana.":
+    "Deze server draait op Rakazo (Apache-2.0). De assistent van LocalPitch is Grana.",
   "How other bots see it": "Hoe andere bots deze zien",
   "Share to": "Delen met",
   "{count} files": "{count} bestanden",
