@@ -1,9 +1,34 @@
 import type { SandboxProviderOptions } from "./sandbox-factory.js";
 
-/** Empty or remote provider without a key becomes none so services can boot for signup. */
-export function resolveSandboxProvider(source: NodeJS.ProcessEnv = process.env): string {
+import { spawnSync } from "node:child_process";
+
+/** True when a Docker CLI responds to `docker info` (daemon reachable). */
+export function isDockerDaemonReachable(): boolean {
+  try {
+    const result = spawnSync("docker", ["info"], {
+      encoding: "utf8",
+      timeout: 8_000,
+      windowsHide: true,
+    });
+    return result.status === 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Empty or remote provider without a key becomes none so services can boot for signup.
+ * Unset SANDBOX_PROVIDER no longer forces Docker: if the daemon is absent, boot as `none`
+ * so API/worker/signup work without a computer backend. Explicit `SANDBOX_PROVIDER=docker`
+ * still requests Docker (and may fail later at provision time).
+ */
+export function resolveSandboxProvider(
+  source: NodeJS.ProcessEnv = process.env,
+  opts?: { dockerReachable?: boolean },
+): string {
   const configured = source.SANDBOX_PROVIDER;
   if (configured !== undefined && !configured.trim()) return "none";
+  const explicit = Boolean(configured?.trim());
   const requested = configured?.trim() || "docker";
   if (requested === "none") return "none";
   if (requested === "e2b" && !optional(source.E2B_API_KEY)) return "none";
@@ -22,6 +47,11 @@ export function resolveSandboxProvider(source: NodeJS.ProcessEnv = process.env):
     source.NODE_ENV === "production" &&
     !optional(source.SANDBOX_SUPERVISOR_TOKEN)
   ) {
+    return "none";
+  }
+  // Default (implicit) docker preference: if Docker is not installed, do not pretend it is mandatory.
+  const dockerOk = opts?.dockerReachable ?? isDockerDaemonReachable();
+  if (requested === "docker" && !explicit && !dockerOk) {
     return "none";
   }
   return requested;

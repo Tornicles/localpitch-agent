@@ -2,8 +2,15 @@ import { describe, expect, it } from "vitest";
 import { resolveSandboxProvider, sandboxProviderOptionsFromEnv } from "./sandbox-provider-env.js";
 
 describe("resolveSandboxProvider", () => {
-  it("defaults to docker", () => {
-    expect(resolveSandboxProvider({})).toBe("docker");
+  it("defaults to docker only when the daemon is reachable", () => {
+    expect(resolveSandboxProvider({}, { dockerReachable: true })).toBe("docker");
+    expect(resolveSandboxProvider({}, { dockerReachable: false })).toBe("none");
+  });
+
+  it("keeps an explicit docker request even when the daemon is down", () => {
+    expect(resolveSandboxProvider({ SANDBOX_PROVIDER: "docker" }, { dockerReachable: false })).toBe(
+      "docker",
+    );
   });
 
   it("keeps explicit none", () => {

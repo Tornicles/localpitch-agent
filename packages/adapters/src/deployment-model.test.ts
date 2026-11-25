@@ -102,6 +102,25 @@ describe("resolveDeploymentModel", () => {
     ).toBe(false);
   });
 
+  it("uses OPENAI_API_KEY and the direct OpenAI model id", () => {
+    const env = {
+      OPENROUTER_API_KEY: "or-key",
+      OPENAI_API_KEY: "sk-openai-test",
+      PI_DEFAULT_PROVIDER: "openai",
+    };
+    expect(resolveDeploymentModel(env)).toEqual({
+      provider: "openai",
+      model: "gpt-6-luna",
+      key: "sk-openai-test",
+      configured: true,
+      hostCredentials: false,
+    });
+    expect(resolveDeploymentModel(env).model.includes("/")).toBe(false);
+    expect(
+      resolveDeploymentModel({ OPENROUTER_API_KEY: "or-key", PI_DEFAULT_PROVIDER: "openai" }),
+    ).toMatchObject({ key: undefined, configured: false, model: "gpt-6-luna" });
+  });
+
   it("uses GEMINI_API_KEY for every bot when the deployment provider is google", () => {
     const env = {
       OPENROUTER_API_KEY: "or-key",

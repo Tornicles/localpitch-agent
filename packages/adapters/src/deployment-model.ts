@@ -4,6 +4,8 @@ import type { ModelUsageLookup } from "@rakazo/adapter-kit";
 import { OpenRouterUsageLookup } from "./openrouter-usage.js";
 
 export const DEFAULT_OPENROUTER_MODEL_ID = "openai/gpt-6-luna";
+/** Direct OpenAI catalog id. The OpenRouter form is `openai/gpt-6-luna` and is not valid here. */
+export const DEFAULT_OPENAI_MODEL_ID = "gpt-6-luna";
 
 /**
  * What Pi reports for a provider that authenticates from the host instead of a key: an AWS
@@ -37,12 +39,14 @@ export function resolveDeploymentModel(env: NodeJS.ProcessEnv = process.env) {
   // An unknown provider gets no key rather than another vendor's.
   const keys: Record<string, string | undefined> = {
     openrouter: env.OPENROUTER_API_KEY,
+    openai: env.OPENAI_API_KEY,
     anthropic: env.ANTHROPIC_API_KEY,
     // Deployment-wide Gemini. Bots use this key when no per-user connection applies.
     google: env.GEMINI_API_KEY,
   };
   const models: Record<string, string> = {
     openrouter: DEFAULT_OPENROUTER_MODEL_ID,
+    openai: DEFAULT_OPENAI_MODEL_ID,
     anthropic: "claude-sonnet-5",
     google: "gemini-3.8-flash",
   };
